@@ -1,0 +1,7 @@
+typer
+httpx
+rich
+python-openstackclient
+openstacksdk
+pytest
+python-dotenv
