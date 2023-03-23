@@ -6,6 +6,7 @@ Openstack-lab is a project that creates a virtual network infrastructure using O
 
 https://www.dropbox.com/s/gqr7xtz28fpzztb/DevStackOVSFinal-W2019.ova?dl=0
 
+https://ena.etsmtl.ca/pluginfile.php/1656895/mod_resource/content/11/GTI778-Labo2-V01-OpenStack.pdf
 
 Network: BLUE
 Subnet 10.0.0.0/24
