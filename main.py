@@ -2,7 +2,7 @@
 
 from src.script1 import create_topology
 from src.script2 import export_json
-from src.openstack_api import list_users, list_vms, list_networks
+from src.scripts.openstack_api import list_users, list_vms, list_networks
 from src.scripts.convert_ova import vagrant, docker, app
 import typer
 
