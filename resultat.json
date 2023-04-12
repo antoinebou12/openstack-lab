@@ -1,0 +1,219 @@
+{
+    "network": {
+        "networks": [
+            {
+                "id": "448d677d-c22d-40b3-82a2-83ab3efa9d9e",
+                "name": "private",
+                "tenant_id": "efac171f77fd4db8a4fef27e5c0e1bdd",
+                "admin_state_up": true,
+                "mtu": 1450,
+                "status": "ACTIVE",
+                "subnets": [
+                    "34d6a4b4-b751-4195-865a-3eb4473abc23",
+                    "44ea8a77-e7cb-4dd1-9d84-51ab4c99c6c0"
+                ],
+                "shared": false,
+                "availability_zone_hints": [],
+                "availability_zones": [
+                    "nova"
+                ],
+                "ipv4_address_scope": null,
+                "ipv6_address_scope": null,
+                "router:external": false,
+                "description": "",
+                "port_security_enabled": true,
+                "tags": [],
+                "created_at": "2023-04-11T22:35:08Z",
+                "updated_at": "2023-04-11T22:35:12Z",
+                "revision_number": 3,
+                "project_id": "efac171f77fd4db8a4fef27e5c0e1bdd",
+                "provider:network_type": "vxlan",
+                "provider:physical_network": null,
+                "provider:segmentation_id": 502
+            },
+            {
+                "id": "5c5402b0-e1c3-4e5a-9057-4392e0c2dfa0",
+                "name": "blue",
+                "tenant_id": "5d42a44f95db4c53a50e7c8090625ef6",
+                "admin_state_up": true,
+                "mtu": 1450,
+                "status": "ACTIVE",
+                "subnets": [],
+                "shared": false,
+                "availability_zone_hints": [],
+                "availability_zones": [],
+                "ipv4_address_scope": null,
+                "ipv6_address_scope": null,
+                "router:external": false,
+                "description": "",
+                "port_security_enabled": true,
+                "tags": [],
+                "created_at": "2023-04-12T00:08:40Z",
+                "updated_at": "2023-04-12T00:08:40Z",
+                "revision_number": 1,
+                "project_id": "5d42a44f95db4c53a50e7c8090625ef6",
+                "provider:network_type": "vxlan",
+                "provider:physical_network": null,
+                "provider:segmentation_id": 200
+            },
+            {
+                "id": "8ecc25bd-3db3-4e69-9ed0-c0383e8f7259",
+                "name": "red",
+                "tenant_id": "5d42a44f95db4c53a50e7c8090625ef6",
+                "admin_state_up": true,
+                "mtu": 1450,
+                "status": "ACTIVE",
+                "subnets": [],
+                "shared": false,
+                "availability_zone_hints": [],
+                "availability_zones": [],
+                "ipv4_address_scope": null,
+                "ipv6_address_scope": null,
+                "router:external": false,
+                "description": "",
+                "port_security_enabled": true,
+                "tags": [],
+                "created_at": "2023-04-12T00:13:15Z",
+                "updated_at": "2023-04-12T00:13:15Z",
+                "revision_number": 1,
+                "project_id": "5d42a44f95db4c53a50e7c8090625ef6",
+                "provider:network_type": "vxlan",
+                "provider:physical_network": null,
+                "provider:segmentation_id": 556
+            },
+            {
+                "id": "cc9778fd-9426-472b-85ed-6069cc3c53fc",
+                "name": "public",
+                "tenant_id": "5d42a44f95db4c53a50e7c8090625ef6",
+                "admin_state_up": true,
+                "mtu": 1500,
+                "status": "ACTIVE",
+                "subnets": [
+                    "c130368c-22e6-48dd-accf-41f392ed06b5",
+                    "d2a95734-a684-4b64-933c-a65b0b763501"
+                ],
+                "shared": false,
+                "availability_zone_hints": [],
+                "availability_zones": [
+                    "nova"
+                ],
+                "ipv4_address_scope": null,
+                "ipv6_address_scope": null,
+                "router:external": true,
+                "description": "",
+                "port_security_enabled": true,
+                "is_default": true,
+                "tags": [],
+                "created_at": "2023-04-11T22:35:19Z",
+                "updated_at": "2023-04-11T22:35:32Z",
+                "revision_number": 3,
+                "project_id": "5d42a44f95db4c53a50e7c8090625ef6",
+                "provider:network_type": "flat",
+                "provider:physical_network": "public",
+                "provider:segmentation_id": null
+            }
+        ]
+    },
+    "servers": {
+        "servers": [
+            {
+                "id": "387085ae-41ad-4c86-9680-65e277d14114",
+                "name": "public",
+                "links": [
+                    {
+                        "rel": "self",
+                        "href": "http://172.28.0.2/compute/v2.1/servers/387085ae-41ad-4c86-9680-65e277d14114"
+                    },
+                    {
+                        "rel": "bookmark",
+                        "href": "http://172.28.0.2/compute/servers/387085ae-41ad-4c86-9680-65e277d14114"
+                    }
+                ]
+            },
+            {
+                "id": "e072b7fa-b453-4c0f-81b7-de981bd5ec8b",
+                "name": "public",
+                "links": [
+                    {
+                        "rel": "self",
+                        "href": "http://172.28.0.2/compute/v2.1/servers/e072b7fa-b453-4c0f-81b7-de981bd5ec8b"
+                    },
+                    {
+                        "rel": "bookmark",
+                        "href": "http://172.28.0.2/compute/servers/e072b7fa-b453-4c0f-81b7-de981bd5ec8b"
+                    }
+                ]
+            }
+        ]
+    },
+    "router": {
+        "routers": [
+            {
+                "id": "5d647833-58bf-4637-abb5-9c9804e37a09",
+                "name": "router",
+                "tenant_id": "5d42a44f95db4c53a50e7c8090625ef6",
+                "admin_state_up": true,
+                "status": "ACTIVE",
+                "external_gateway_info": {
+                    "network_id": "cc9778fd-9426-472b-85ed-6069cc3c53fc",
+                    "external_fixed_ips": [
+                        {
+                            "subnet_id": "c130368c-22e6-48dd-accf-41f392ed06b5",
+                            "ip_address": "2001:db8::cd"
+                        }
+                    ],
+                    "enable_snat": true
+                },
+                "description": "",
+                "availability_zones": [
+                    "nova"
+                ],
+                "distributed": false,
+                "ha": false,
+                "availability_zone_hints": [],
+                "routes": [],
+                "flavor_id": null,
+                "tags": [],
+                "created_at": "2023-04-12T00:29:38Z",
+                "updated_at": "2023-04-12T00:29:39Z",
+                "revision_number": 3,
+                "project_id": "5d42a44f95db4c53a50e7c8090625ef6"
+            },
+            {
+                "id": "c88b13d9-9a7a-420f-9ec1-35858c02c9b4",
+                "name": "router1",
+                "tenant_id": "efac171f77fd4db8a4fef27e5c0e1bdd",
+                "admin_state_up": true,
+                "status": "ACTIVE",
+                "external_gateway_info": {
+                    "network_id": "cc9778fd-9426-472b-85ed-6069cc3c53fc",
+                    "external_fixed_ips": [
+                        {
+                            "subnet_id": "d2a95734-a684-4b64-933c-a65b0b763501",
+                            "ip_address": "172.24.4.10"
+                        },
+                        {
+                            "subnet_id": "c130368c-22e6-48dd-accf-41f392ed06b5",
+                            "ip_address": "2001:db8::192"
+                        }
+                    ],
+                    "enable_snat": true
+                },
+                "description": "",
+                "availability_zones": [
+                    "nova"
+                ],
+                "distributed": false,
+                "ha": false,
+                "availability_zone_hints": [],
+                "routes": [],
+                "flavor_id": null,
+                "tags": [],
+                "created_at": "2023-04-11T22:35:17Z",
+                "updated_at": "2023-04-11T22:35:33Z",
+                "revision_number": 6,
+                "project_id": "efac171f77fd4db8a4fef27e5c0e1bdd"
+            }
+        ]
+    }
+}

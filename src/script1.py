@@ -7,6 +7,9 @@ import os
 
 app = typer.Typer()
 
+
+# go to src/docker/containerized-devstack
+
 class OpenStack:
     def __init__(self, ip, port, name, username, password):
         self.ip = ip
@@ -61,7 +64,8 @@ class OpenStack:
         print("Récupération de la liste des utilisateurs...")
         print(self.token)
         url = f"http://{self.ip}:{self.port}/identity/v3/users"
-        headers = {"X-Auth-Token": self.token, "Content-Type": "application/json"}
+        headers = {"X-Auth-Token": self.token,
+                   "Content-Type": "application/json"}
         response = httpx.get(url, headers=headers)
         users = response.json()["users"]
 
@@ -92,7 +96,7 @@ class OpenStack:
         # requête pour récupérer la liste des réseaux
         try:
             networks_response = httpx.get(
-                f"http://{self.ip}:9696/v2.0/networks.json", headers={"X-Auth-Token": self.token}
+                f"http://{self.ip}:9696/networking/v2.0/networks.json", headers={"X-Auth-Token": self.token}
             )
         except Exception:
             print("Erreur lors de la récupération de la liste des réseaux")
@@ -109,8 +113,9 @@ class OpenStack:
             exit(1)
 
         typer.echo("Liste des réseaux :")
-        for network in networks:
-            typer.echo(network[0])
+        for network in networks["networks"]:
+            typer.echo(network["name"])
+            typer.echo(network["id"])
 
         return networks
 
@@ -124,25 +129,20 @@ class OpenStack:
         Returns:
             La liste des sous-réseaux de l'instance OpenStack.
         """
-        # requête pour récupérer la liste des sous-réseaux
-        subnets_response = httpx.get(
-            f"http://{self.ip}:9696/v2.0/networks.json", headers={"X-Auth-Token": self.token}
-        )
+        subnets_list = []
+        for network in self.list_networks()["networks"]:
+            subnet_object = {
+                "network_id": network["id"],
+                "subnets": [],
+            }
+            for subnet in network["subnets"]:
+                typer.echo(subnet)
+                subnet_object["subnets"].append(subnet)
+                subnets_list.append(subnet_object)
 
-        if subnets_response.status_code != 200:
-            print("Erreur lors de la récupération de la liste des sous-réseaux")
-            exit(1)
+        print(subnets_list)
 
-        subnets = subnets_response.json()
-
-        if len(subnets) == 0:
-            print("Aucun sous-réseau trouvé")
-            exit(1)
-
-        typer.echo("Liste des sous-réseaux :")
-        for subnet in subnets:
-            typer.echo(subnet[0])
-
+        return subnets_list
 
     def list_projects(self):
         """
@@ -228,6 +228,28 @@ class OpenStack:
         for flavor in flavors['flavors']:
             typer.echo(flavor['name'])
 
+    def list_routers(self):
+        """
+        Cette commande permet de récupérer la liste des routeurs d'une instance OpenStack.
+        Args:
+            ip: l'adresse IP de l'instance OpenStack.
+            token: le token d'authentification de l'instance OpenStack.
+
+        Returns:
+            La liste des routeurs de l'instance OpenStack.
+        """
+        # requête pour récupérer la liste des routeurs
+        routers_response = httpx.get(
+            f"http://{self.ip}:9696/networking/v2.0/routers", headers={"X-Auth-Token": self.token}
+        )
+
+        routers = routers_response.json()
+        typer.echo("Liste des routeurs :")
+        for router in routers['routers']:
+            typer.echo(router['name'])
+
+        return routers
+
     def create_network(self, name):
         """
         Cette commande permet de créer un réseau dans une instance OpenStack.
@@ -239,11 +261,22 @@ class OpenStack:
         Returns:
             Le réseau créé.
         """
+
+        # check if network already exists
+        for network in self.list_networks()["networks"]:
+            if network["name"] == name:
+                typer.echo(f"Le réseau {name} existe déjà.")
+                return network
+
         # requête pour créer un réseau
         network_response = httpx.post(
-            f"http://{self.ip}:9696",
+            f"http://{self.ip}:9696/networking/v2.0/networks",
             headers={"X-Auth-Token": self.token},
-            json={"network": {"name": name}},
+            json={
+                "network": {
+                    "name": name,
+                }
+            },
         )
         network = network_response.json()
 
@@ -264,11 +297,18 @@ class OpenStack:
         Returns:
             Le sous-réseau créé.
         """
+
         # requête pour créer un sous-réseau
-        subnet_response = httpx.post(
-            f"http://{self.ip}:{self.port}/network/v2.0/subnets",
+        subnet_response = httpx.put(
+            f"http://{self.ip}:9696/networking/v2.0/networks",
             headers={"X-Auth-Token": self.token},
-            json={"subnet": {"name": name, "cidr": cidr, "network_id": network_id}},
+            json={
+                "network": {
+                    "ipv4_address_scope": cidr,
+                    "network_id": network_id,
+                    "subnets": [name]
+                }
+            },
         )
         subnet = subnet_response.json()
 
@@ -289,14 +329,26 @@ class OpenStack:
         Returns:
             Le routeur créé.
         """
+        # routeur déjà existant
+        for router in self.list_routers()["routers"]:
+            if router["name"] == name:
+                typer.echo(f"Le routeur {name} existe déjà.")
+                return router
+
         # requête pour créer un routeur
         router_response = httpx.post(
-            f"http://{self.ip}:9696/network/v2.0/routers",
+            f"http://{self.ip}:9696/networking/v2.0/routers",
             headers={"X-Auth-Token": self.token},
             json={
                 "router": {
                     "name": name,
-                    "external_gateway_info": {"network_id": external_network_id},
+                    "external_gateway_info": {
+                        "enable_snat": True,
+                        "network_id": external_network_id,
+                        "external_fixed_ips": [{
+                            "subnet_id": subnet_id,
+                        }]
+                    },
                     "admin_state_up": True,
                 }
             },
@@ -304,8 +356,9 @@ class OpenStack:
         router = router_response.json()
 
         # requête pour attacher un sous-réseau au routeur
+        print(router)
         httpx.put(
-            f"http://{self.ip}:9696/network/v2.0/routers/{router['router']['id']}/add_router_interface",
+            f"http://{self.ip}:9696/networking/v2.0/routers/{router['router']['id']}/add_router_interface",
             headers={"X-Auth-Token": self.token},
             json={"subnet_id": subnet_id},
         )
@@ -342,6 +395,11 @@ class OpenStack:
             },
         )
         vm = vm_response.json()
+
+        # check if bad request exists
+        if "badRequest" in vm:
+            typer.echo(vm["badRequest"]["message"])
+            return vm
 
         typer.echo(f"La machine virtuelle {name} a été créée avec succès.")
 
@@ -400,14 +458,14 @@ class OpenStack:
         """
         # requête pour récupérer la liste des réseaux
         networks_response = httpx.get(
-            f"http://{self.ip}:9696/network/v2.0/networks", headers={"X-Auth-Token": self.token}
+            f"http://{self.ip}:9696/networking/v2.0/networks", headers={"X-Auth-Token": self.token}
         )
         networks = networks_response.json()
         for network in networks["networks"]:
             if network["name"] == network_name:
                 return network["id"]
 
-    def get_subnet_id(self, subnet_name):
+    def get_subnet_id(self, network_id):
         """
         Cette commande permet de récupérer l'identifiant d'un sous-réseau.
         Args:
@@ -418,14 +476,10 @@ class OpenStack:
         Returns:
             L'identifiant du sous-réseau.
         """
-        # requête pour récupérer la liste des sous-réseaux
-        subnets_response = httpx.get(
-            f"http://{self.ip}:9696/network/v2.0/subnets", headers={"X-Auth-Token": self.token}
-        )
-        subnets = subnets_response.json()
-        for subnet in subnets["subnets"]:
-            if subnet["name"] == subnet_name:
-                return subnet["id"]
+        subnets_obj = self.list_subnets()
+        for network in subnets_obj:
+            if network["network_id"] == network_id:
+                return network["subnets"][0]
 
     def get_vm_id(self, vm_name):
         """
@@ -479,7 +533,7 @@ class OpenStack:
         """
         # requête pour récupérer la liste des routeurs
         routers_response = httpx.get(
-            f"http://{self.ip}:9696/v2.0/network/routers", headers={"X-Auth-Token": self.token}
+            f"http://{self.ip}:9696/networking/v2.0/routers", headers={"X-Auth-Token": self.token}
         )
         routers = routers_response.json()
         for router in routers["routers"]:
@@ -532,9 +586,8 @@ class OpenStack:
 
         # Create blue subnet
         print("Created blue subnet")
-        self.create_subnet(blue_subnet_name, blue_network_id)
+        self.create_subnet(blue_subnet_name, blue_subnet_cidr, blue_network_id)
         blue_subnet_id = self.get_subnet_id(blue_subnet_name)
-
 
         # Create red network
         print("Created red network")
@@ -544,8 +597,7 @@ class OpenStack:
 
         # Create red subnet
         print("Created red subnet")
-        self.create_subnet(red_subnet_name, red_network_id)
-        red_subnet_id = self.get_subnet_id(red_subnet_name)
+        red_subnet_id = self.create_subnet(red_subnet_name, red_subnet_cidr, red_network_id)
         print("Created red subnet")
 
         # Create public network
@@ -556,39 +608,38 @@ class OpenStack:
 
         # Create public subnet
         print("Created public subnet")
-        self.create_subnet("public", public_network_id)
-        public_subnet_id = self.get_subnet_id("public")
+        subnet = self.create_subnet("public", "0.0.0.0/24", public_network_id)
+        public_subnet_id = self.get_subnet_id(public_network_id)
         print("Created public subnet")
 
         print("Creating router...")
         # Create router
         print("Created router")
-        self.create_router(router_name, public_network_id)
+        self.create_router(router_name, public_network_id, public_subnet_id)
         router_id = self.get_router_id(router_name)
         print("Created router")
 
         print("Creating VMs...")
 
         # Create instance
-        image_name = 'cirros-0.5.1-x86_64-disk'
+        image_name = 'cirros-0.5.2-x86_64-disk'
         flavor_name = 'm1.tiny'
         network_name = 'private'
 
-
         print("Created blue VM")
-        self.create_vm(blue_vm1_name, image_name, flavor_name, blue_network_id)
+        self.create_vm(blue_vm1_name, self.get_image_id(image_name), self.get_flavor_id(flavor_name), blue_network_id)
         blue_vm_id = self.get_vm_id(blue_vm1_name)
         print("Created blue VM")
 
         # Create red VM
         print("Created red VM")
-        self.create_vm(blue_vm1_name, image_name, flavor_name, red_network_id)
+        self.create_vm(blue_vm1_name, self.get_image_id(image_name), self.get_flavor_id(flavor_name), red_network_id)
         red_vm_id = self.get_vm_id(blue_vm1_name)
         print("Created red VM")
 
         # Create public VM
         print("Created public VM")
-        self.create_vm("public", image_name, flavor_name, public_network_id)
+        self.create_vm("public", self.get_image_id(image_name), self.get_flavor_id(flavor_name), public_network_id)
         public_vm_id = self.get_vm_id("public")
         print("Created public VM")
 
@@ -599,24 +650,42 @@ class OpenStack:
     help="Create a topology with 2 networks, 2 subnets, 2 VMs and 1 router."
 )
 def create_topology(
-    openstack_ip: str = typer.Argument("localhost", help="OpenStack IP address", envvar="OPENSTACK_IP", show_default=True),
-    openstack_port: str = typer.Argument("8090", help="OpenStack port", envvar="OPENSTACK_PORT", show_default=True),
-    project_name: str = typer.Argument("admin", help="OpenStack project name", envvar="OS_PROJECT_NAME", show_default=True),
-    username: str = typer.Argument("admin", help="OpenStack username", envvar="OS_USERNAME", show_default=True),
-    password: str = typer.Argument("secret", help="OpenStack password", envvar="OS_PASSWORD", show_default=True),
-    blue_network_name: str = typer.Argument("blue", help="Name of the blue network", show_default=True),
-    blue_subnet_name: str = typer.Argument("blue_subnet", help="Name of the blue subnet", show_default=True),
-    blue_subnet_cidr: str = typer.Argument("10.0.0.0/24", help="CIDR for the blue subnet", show_default=True),
-    blue_vm1_name: str = typer.Argument("blue_vm1", help="Name of the first blue VM", show_default=True),
-    red_network_name: str = typer.Argument("red", help="Name of the red network", show_default=True),
-    red_subnet_name: str = typer.Argument("red_subnet", help="Name of the red subnet", show_default=True),
-    red_subnet_cidr: str = typer.Argument("192.168.1.0/24", help="CIDR for the red subnet", show_default=True),
-    red_vm2_name: str = typer.Argument("red_vm2", help="Name of the red VM", show_default=True),
-    public_network_name: str = typer.Argument("public", help="Name of the public network", show_default=True),
-    public_subnet_name: str = typer.Argument("public_subnet", help="Name of the public subnet", show_default=True),
-    public_subnet_cidr: str = typer.Argument("172.24.4.0/24", help="CIDR for the public subnet", show_default=True),
-    public_vm3_name: str = typer.Argument("public_vm3", help="Name of the second blue VM", show_default=True),
-    router_name: str = typer.Argument("router", help="Name of the router", show_default=True),
+    openstack_ip: str = typer.Argument(
+        "172.28.0.2", help="OpenStack IP address", envvar="OPENSTACK_IP", show_default=True),
+    openstack_port: str = typer.Argument(
+        "80", help="OpenStack port", envvar="OPENSTACK_PORT", show_default=True),
+    project_name: str = typer.Argument(
+        "admin", help="OpenStack project name", envvar="OS_PROJECT_NAME", show_default=True),
+    username: str = typer.Argument(
+        "admin", help="OpenStack username", envvar="OS_USERNAME", show_default=True),
+    password: str = typer.Argument(
+        "password", help="OpenStack password", envvar="OS_PASSWORD", show_default=True),
+    blue_network_name: str = typer.Argument(
+        "blue", help="Name of the blue network", show_default=True),
+    blue_subnet_name: str = typer.Argument(
+        "blue_subnet", help="Name of the blue subnet", show_default=True),
+    blue_subnet_cidr: str = typer.Argument(
+        "10.0.0.0/24", help="CIDR for the blue subnet", show_default=True),
+    blue_vm1_name: str = typer.Argument(
+        "blue_vm1", help="Name of the first blue VM", show_default=True),
+    red_network_name: str = typer.Argument(
+        "red", help="Name of the red network", show_default=True),
+    red_subnet_name: str = typer.Argument(
+        "red_subnet", help="Name of the red subnet", show_default=True),
+    red_subnet_cidr: str = typer.Argument(
+        "192.168.1.0/24", help="CIDR for the red subnet", show_default=True),
+    red_vm2_name: str = typer.Argument(
+        "red_vm2", help="Name of the red VM", show_default=True),
+    public_network_name: str = typer.Argument(
+        "public", help="Name of the public network", show_default=True),
+    public_subnet_name: str = typer.Argument(
+        "public_subnet", help="Name of the public subnet", show_default=True),
+    public_subnet_cidr: str = typer.Argument(
+        "172.24.4.0/24", help="CIDR for the public subnet", show_default=True),
+    public_vm3_name: str = typer.Argument(
+        "public_vm3", help="Name of the second blue VM", show_default=True),
+    router_name: str = typer.Argument(
+        "router", help="Name of the router", show_default=True),
 ):
     """
     Cette commande permet de créer une topologie avec 2 réseaux, 2 sous-réseaux, 2 machines virtuelles et 1 routeur.
@@ -640,31 +709,32 @@ def create_topology(
         public_vm3_name: le nom de la machine virtuelle public.
         router_name: le nom du routeur.
         """
-    openstack = OpenStack(openstack_ip, openstack_port, project_name, username, password)
-    openstack.list_projects()
-    openstack.list_users()
-    openstack.list_vms()
-    openstack.list_flavors()
-    openstack.list_images()
+    openstack = OpenStack(openstack_ip, openstack_port,
+                          project_name, username, password)
+    # openstack.list_projects()
+    # openstack.list_users()
+    # openstack.list_vms()
+    # openstack.list_flavors()
+    # openstack.list_images()
     # openstack.list_networks()
     # openstack.list_subnets()
-    # openstack.list_routers()
-    # print("Creating topology...")
-    # openstack.create_topology(
-    #     blue_network_name,
-    #     blue_subnet_name,
-    #     blue_subnet_cidr,
-    #     blue_vm1_name,
-    #     red_network_name,
-    #     red_subnet_name,
-    #     red_subnet_cidr,
-    #     red_vm2_name,
-    #     public_network_name,
-    #     public_subnet_name,
-    #     public_subnet_cidr,
-    #     public_vm3_name,
-    #     router_name,
-    # )
+    print("Creating topology...")
+    openstack.create_topology(
+        blue_network_name,
+        blue_subnet_name,
+        blue_subnet_cidr,
+        blue_vm1_name,
+        red_network_name,
+        red_subnet_name,
+        red_subnet_cidr,
+        red_vm2_name,
+        public_network_name,
+        public_subnet_name,
+        public_subnet_cidr,
+        public_vm3_name,
+        router_name,
+    )
+
 
 if __name__ == "__main__":
     app()

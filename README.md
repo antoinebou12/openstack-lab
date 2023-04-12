@@ -36,6 +36,7 @@ To use this project, you need to have the following:
 * Openstack DevStack installation
 * Python3
 * VirtualBox
+* Docker
 
 ## Installation
 
@@ -54,13 +55,32 @@ pip install -r requirements.txt
 ```shell
 pip install poetry
 ```
+
+5. Install docker-compore
+   ```
+   cd src/docker/containerized-devstack
+   docker-compose up -f docker-compose.build.yml
+   ```
+
 ## Script 1
 
 This script takes the DevStack VM IP address as input and creates the required topology. The script uses shell scripting and the `curl` command to send HTTP RESTful API requests. The created VMs should be able to communicate with each other via pings.
 
+```
+python3 main.py create_topology
+# or
+python3 src/script1.py
+```
+
 ### Script 2
 
 This script takes the DevStack VM IP address as input and displays the state (active or inactive) of the network, virtual machines, and router interfaces. The output format of the script is JSON.
+
+```
+python main.py export_json
+# or
+python3 src/script2.py
+```
 
 ## Assumptions and Directives
 
